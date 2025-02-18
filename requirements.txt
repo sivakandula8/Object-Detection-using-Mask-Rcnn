@@ -1,0 +1,9 @@
+flask
+numpy
+matplotlib
+opencv-python
+opencv-python-headless
+Pillow
+pycocotools
+werkzeug
+Gunicorn

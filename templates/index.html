@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <style>
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('home') }}" class="logo">Object Detection</a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('first') }}">Home</a></li>
+            <li><a href="{{ url_for('preview') }}">Preview</a></li>
+            <li><a href="{{ url_for('experience') }}">Experience</a></li>
+            <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
+            <li><a href="{{ url_for('contact') }}">Contact</a></li>
+           <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Header Section -->
+    <header>
+        <div class="container">
+            <h1>What is Object Detection?</h1>
+            <p style="color: white;">Discover the power of computer vision and object detection models using Mask R-CNN.</p>
+        </div>
+    </header>
+
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Buttons to toggle sections -->
+
+        <section>
+            <div class="card">
+                <h2>What is Object Detection?</h2>
+                <p>Object detection is a computer vision task focused on identifying the location of specific objects in visual data like images or video.</p>
+                <p>Object detection models are used across industries for a range of use cases, from autonomous vehicles to medical imaging.</p>
+            </div>
+        </section>
+
+
+        <div class="card">
+            <h2>Try Object Detection</h2>
+            <button onclick="showSection('image-video-section')" class="button">Image/Video Upload </button>
+            <button onclick="showSection('video-feed-section')" class="button">Video Feed </button>
+            <button onclick="showSection('prompt-section')" class="button">Filter Detections</button>
+            <button onclick="showSection('image-matching-section')" class="button">Image Matching</button>
+        </div>
+
+        <!-- Upload Section -->
+        <section hidden>
+            <div class="card">
+                <h2>Try Object Detection</h2>
+                <p>Upload an image to see object detection in action!</p>
+                <form id="upload-form" action="/object-detection/" method="post" enctype="multipart/form-data">
+                    <label for="image">Select Image:</label>
+                    <input type="file" id="image" name="image" accept="image/*" required><br><br>
+                    <input type="submit" value="Upload and Apply Detection">
+                </form>
+            </div>
+        </section>
+
+        <!-- Image & Video Upload Section -->
+        <section id="image-video-section" class="section">
+            <div class="card">
+                <h2>Upload an Image or Video</h2>
+                <div class="upload-container">
+                    <form id="upload-form" action="/object-detection/" method="post" enctype="multipart/form-data">
+                        <label for="file">Select File:</label>
+                        <input type="file" name="file" accept=".png, .jpg, .jpeg, .mp4, .avi, .mov" required>
+                        <input type="submit" value="Upload and Apply Detection"/>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Video Feed Section -->
+        <section id="video-feed-section" class="section">
+            <div class="card">
+                <h2>Video Feed</h2>
+                <p>View the live video feed with object detection applied.</p>
+                <div class="video-container">
+                    <a href="{{ url_for('video') }}" class="button">View Video Feed</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Prompt Section -->
+        <section id="prompt-section" class="section">
+            <div class="card">
+                <h2>Filter Detections</h2>
+                <div class="upload-container">
+                <form id="upload-form" action="{{ url_for('filter_detection') }}" method="post" enctype="multipart/form-data">
+                    <label for="file" >Select File:</label>
+                    <input type="file" name="file" accept=".png, .jpg, .jpeg, .mp4, .avi, .mov" required>
+                    
+                    <label for="class_name" style="color: #333; font-weight: bold; font-size: 16px; display: block; margin-bottom: 5px;">
+                        Enter Class Name <span style="font-style: italic; color: #666;">(e.g., Car, Person)</span>:
+                    </label>
+                    <input type="text" id="class_name" name="class_name" 
+                           placeholder="Type here..." 
+                           required 
+                           style="width: 40%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;  transition: border-color 0.3s ease-in-out;"
+                           onfocus="this.style.borderColor='#D32F2F'" 
+                           onblur="this.style.borderColor='#ccc'">
+
+                    <button type="submit" class="button">Filter</button>
+                </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Image Matching Section -->
+        <section id="image-matching-section" class="section">
+            <div class="card">
+                <h2>Image Matching</h2>
+                <p>Find if one image is part of another image!</p>
+                <div class="upload-container">
+                    <form action="{{ url_for('match_images') }}" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="source_image">Source Image (larger image to search within):</label>
+                            <input type="file" class="form-control-file" id="source_image" name="source_image" accept=".png, .jpg, .jpeg" required>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label for="target_image">Target Image (smaller image to find):</label>
+                            <input type="file" class="form-control-file" id="target_image" name="target_image" accept=".png, .jpg, .jpeg" required>
+                        </div>
+                        <input type="submit" value="Find Match" class="button" style="margin-top: 15px;"/>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Models Section -->
+        <section>
+            <div class="card">
+                <h2>Popular Object Detection Models</h2>
+                <div class="models-grid">
+                    <div class="model-card">
+                        <h3>R-CNN</h3>
+                        <p>Region-based Convolutional Neural Networks for object detection.</p>
+                        <a href="https://arxiv.org/abs/1311.2524" class="widget-button">Learn More</a>
+                    </div>
+                    <div class="model-card">
+                        <h3>Faster R-CNN</h3>
+                        <p>An improved version of R-CNN with faster object detection.</p>
+                        <a href="https://arxiv.org/abs/1506.01497" class="widget-button">Learn More</a>
+                    </div>
+                    <div class="model-card">
+                        <h3>YOLOv5</h3>
+                        <p>Real-time object detection with state-of-the-art accuracy.</p>
+                        <a href="https://github.com/ultralytics/yolov5" class="widget-button">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Object Detect. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show the selected section
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        document.getElementById('upload-form').onsubmit = async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const response = await fetch('/object-detection/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const outputImage = document.getElementById('output-image');
+                outputImage.src = url;
+
+                const downloadLink = document.getElementById('download-link');
+                downloadLink.href = url;
+            } else {
+                console.error('Failed to process image');
+            }
+        };
+    </script>
+</body>
+</html>
