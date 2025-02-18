@@ -17,8 +17,7 @@ This is a Flask-based web application that performs object detection on images u
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/21BQ1A1282/Mask_R-CNN-for-object-detection-in-flask.git
-   cd object-detection-app
+   [https://github.com/sivakandula8/Object-Detection-using-Mask-Rcnn.git]
    ```
 2. Install the required dependencies:
    ```bash
