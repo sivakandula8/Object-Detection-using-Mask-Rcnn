@@ -17,9 +17,6 @@ from pycocotools.cocoeval import COCOeval
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
 
-
-# value = np.float32(0.95)  
-# session['accuracy'] = float(value)
 # Configuration
 UPLOAD_FOLDER = 'static/uploads/'
 RESULT_FOLDER = 'static/results/'
@@ -55,29 +52,28 @@ def allowed_file(filename, extensions=None):
 
 
 
-
-def draw_dashed_rectangle(image, top_left, bottom_right, color, thickness=2, dash_length=1):
+def draw_dashed_rectangle(image, top_left, bottom_right, color, thickness=2, dash_length=10):
     """
-    Draw a solid rectangle on the image (previously dashed).
+    Draw a dashed rectangle on the image.
     """
-    cv2.rectangle(image, top_left, bottom_right, color, thickness)
+    x1, y1 = top_left
+    x2, y2 = bottom_right
 
-# Create a blank image
-image = np.ones((500, 500, 3), dtype=np.uint8) * 255  # White background
+    # Draw top line
+    for x in range(x1, x2, dash_length * 2):
+        cv2.line(image, (x, y1), (min(x + dash_length, x2), y1), color, thickness)
 
-# Define rectangle parameters
-top_left = (100, 100)
-bottom_right = (400, 400)
-color = (0, 0, 255)  # Red color
-thickness = 2  # Reduced thickness
+    # Draw bottom line
+    for x in range(x1, x2, dash_length * 2):
+        cv2.line(image, (x, y2), (min(x + dash_length, x2), y2), color, thickness)
 
-# Draw the rectangle
-draw_dashed_rectangle(image, top_left, bottom_right, color, thickness)
+    # Draw left line
+    for y in range(y1, y2, dash_length * 2):
+        cv2.line(image, (x1, y), (x1, min(y + dash_length, y2)), color, thickness)
 
-# Display the image
-
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    # Draw right line
+    for y in range(y1, y2, dash_length * 2):
+        cv2.line(image, (x2, y), (x2, min(y + dash_length, y2)), color, thickness)
 
 # Define object_colors globally
 object_colors = [
@@ -152,29 +148,8 @@ def process_frame(frame, class_name=None):
             colored_mask[refined_mask > 0] = color  # Apply the color to the refined mask region
 
             # Blend the colored mask with the original frame using alpha blending (inside the bounding box only)
-            # alpha = 0.5  # Adjust transparency for better blending
-            # frame[y1:y2, x1:x2] = cv2.addWeighted(colored_mask, alpha, frame[y1:y2, x1:x2], 1 - alpha, 0)
-            # Create a binary mask to isolate detected objects
-            binary_mask = (refined_mask > 0).astype("uint8") * 255
-
-            # Convert binary mask to 3 channels
-            binary_mask = cv2.cvtColor(binary_mask, cv2.COLOR_GRAY2BGR)
-
-            # Remove shadows by applying the color directly to the mask 
-            mask_colored = np.zeros_like(frame[y1:y2, x1:x2])
-            mask_colored[:] = color  # Fill with detected object color
-
-           # Define transparency level (40%)
-            alpha = 0.5 
-
-            # Blend the mask color with the original frame using alpha transparency
-            mask_applied = cv2.addWeighted(mask_colored, alpha, frame[y1:y2, x1:x2], 1 - alpha, 0)
-
-            # Apply only within the detected mask region
-            frame[y1:y2, x1:x2] = np.where(binary_mask == 255, mask_applied, frame[y1:y2, x1:x2])
-
-
-
+            alpha = 0.5  # Adjust transparency for better blending
+            frame[y1:y2, x1:x2] = cv2.addWeighted(colored_mask, alpha, frame[y1:y2, x1:x2], 1 - alpha, 0)
 
             # Draw the bounding box with dashed lines
             draw_dashed_rectangle(frame, (x1, y1), (x2, y2), color, thickness=2, dash_length=10)
@@ -202,8 +177,8 @@ def detect_on_image(image_path, class_name=None):
     # Save the result
     result_path = os.path.join(RESULT_FOLDER, os.path.basename(image_path))
     cv2.imwrite(result_path, processed_frame)
-    # Store average confidence in session (convert float32 to float)
-    session['accuracy'] = float(round(avg_confidence, 2))  # Convert to float
+    # Store average confidence in session
+    session['accuracy'] = float(round(avg_confidence, 2))
     return result_path
 
 
@@ -236,8 +211,7 @@ def detect_on_video(video_path, class_name=None):
         out.write(processed_frame)
     # Calculate average confidence
     avg_confidence = (sum(all_scores) / len(all_scores)) * 100 if all_scores else 0
-    # Store average confidence in session (convert float32 to float)
-    session['accuracy'] = float(round(avg_confidence, 2))  # Convert to float
+    session['accuracy'] = round(avg_confidence, 2)
 
     # Release the video capture and writer objects
     cap.release()
@@ -319,32 +293,16 @@ def detect_image_in_image(source_path, target_path):
     return confidence_score, source_img
 
 
+# Home route
 @app.route('/')
-def first():
+def home():
     return render_template('first.html')
 
-@app.route('/preview')
-def preview():
-    return render_template('preview.html')
-
-@app.route('/experience')
-def experience():
-    return render_template('experience.html')
-
-@app.route('/feedback')
-def feedback():
-    return render_template('feedback.html')
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
-
-@app.route('/logout')
-def logout():
-    # Logic for logging out the user
-    session.clear()
-    return redirect(url_for('first'))
-
+@app.route('/index')
+def index():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('index.html')
 
 # Login route
 @app.route('/login', methods=['GET', 'POST'])
@@ -379,18 +337,18 @@ def signup():
     return render_template('signup.html')
 
 
+# Logout route
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
 
 
 
-# Object detection route
-@app.route('/index', endpoint='home')
-def index():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    return render_template('index.html')
 
 
 
+# Upload and process image or video
 @app.route('/object-detection/', methods=['POST'])
 def apply_detection():
     if 'file' not in request.files:
@@ -405,19 +363,7 @@ def apply_detection():
         # Save the uploaded file
         filename = secure_filename(file.filename)
         file_path = os.path.join(UPLOAD_FOLDER, filename)
-        
-        # Check if the file already exists
-        if os.path.exists(file_path):
-            # Option 1: Overwrite the existing file
-            os.remove(file_path)  # Remove the existing file
-            file.save(file_path)  # Save the new file
-            # Option 2: Generate a unique filename (uncomment below)
-            # base, ext = os.path.splitext(filename)
-            # unique_filename = f"{base}_{int(time.time())}{ext}"
-            # file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-            # file.save(file_path)
-        else:
-            file.save(file_path)
+        file.save(file_path)
 
         # Process the file based on its type
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -430,19 +376,7 @@ def apply_detection():
         # Save the result file
         result_filename = 'detection_' + filename
         result_path_final = os.path.join(RESULT_FOLDER, result_filename)
-        
-        # Check if the result file already exists
-        if os.path.exists(result_path_final):
-            # Option 1: Overwrite the existing file
-            os.remove(result_path_final)  # Remove the existing file
-            os.rename(result_path, result_path_final)  # Move or rename the result file
-            # Option 2: Generate a unique filename (uncomment below)
-            # base, ext = os.path.splitext(result_filename)
-            # unique_result_filename = f"{base}_{int(time.time())}{ext}"
-            # result_path_final = os.path.join(RESULT_FOLDER, unique_result_filename)
-            # os.rename(result_path, result_path_final)
-        else:
-            os.rename(result_path, result_path_final)
+        os.rename(result_path, result_path_final)  # Move or rename the result file
 
         # Store filenames and accuracy in session
         session['original_file'] = filename
@@ -470,19 +404,7 @@ def filter_detection():
         # Save the uploaded file
         filename = secure_filename(file.filename)
         file_path = os.path.join(UPLOAD_FOLDER, filename)
-        
-        # Check if the file already exists
-        if os.path.exists(file_path):
-            # Option 1: Overwrite the existing file
-            os.remove(file_path)  # Remove the existing file
-            file.save(file_path)  # Save the new file
-            # Option 2: Generate a unique filename (uncomment below)
-            # base, ext = os.path.splitext(filename)
-            # unique_filename = f"{base}_{int(time.time())}{ext}"
-            # file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-            # file.save(file_path)
-        else:
-            file.save(file_path)
+        file.save(file_path)
 
         # Process the file based on its type
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -495,19 +417,7 @@ def filter_detection():
         # Save the result file
         result_filename = 'filtered_' + filename
         result_path_final = os.path.join(RESULT_FOLDER, result_filename)
-        
-        # Check if the result file already exists
-        if os.path.exists(result_path_final):
-            # Option 1: Overwrite the existing file
-            os.remove(result_path_final)  # Remove the existing file
-            os.rename(result_path, result_path_final)  # Move or rename the result file
-            # Option 2: Generate a unique filename (uncomment below)
-            # base, ext = os.path.splitext(result_filename)
-            # unique_result_filename = f"{base}_{int(time.time())}{ext}"
-            # result_path_final = os.path.join(RESULT_FOLDER, unique_result_filename)
-            # os.rename(result_path, result_path_final)
-        else:
-            os.rename(result_path, result_path_final)
+        os.rename(result_path, result_path_final)  # Move or rename the result file
 
         # Store filenames and accuracy in session
         session['original_file'] = filename
@@ -520,6 +430,7 @@ def filter_detection():
     return redirect(request.url)
 
 
+# Add new route for image matching
 @app.route('/match-images', methods=['POST'])
 def match_images():
     if 'source_image' not in request.files or 'target_image' not in request.files:
@@ -552,14 +463,13 @@ def match_images():
         result_path = os.path.join(RESULT_FOLDER, result_filename)
         cv2.imwrite(result_path, result_img)
         
-        # Store results in session (convert float32 to float)
+        # Store results in session
         session['match_result'] = result_filename
-        session['match_confidence'] = float(round(confidence_score * 100, 2))  # Convert to float
+        session['match_confidence'] = round(confidence_score * 100, 2)
         
         return redirect(url_for('match_result'))
         
     return redirect(url_for('index'))
-
 
 # Add route for showing match results
 @app.route('/match-result')
@@ -939,4 +849,4 @@ def save_users(users):
 
 # Run the app
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8000, debug=True)
+      app.run(host="0.0.0.0", port=8000, debug=True)
