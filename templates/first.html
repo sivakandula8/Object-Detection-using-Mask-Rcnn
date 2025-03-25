@@ -21,11 +21,13 @@
 
     <!-- Main Content -->
     <div class="main-container">
-        <!-- Card Layout -->
-        <div class="card">
-            <!-- Image -->
-            <img src="{{ url_for('static', filename='images/football-p-1080.png') }}" alt="Object Detection" >
-
+        <!-- Video Player -->
+        <div class="video-container">
+            <video autoplay loop muted playsinline width="100%">
+                <source src="{{ url_for('static', filename='images/Demo video.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
             <!-- Card Content -->
             <div class="card-content">
                 <h2>Detect Objects with Ease</h2>
