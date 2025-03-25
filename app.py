@@ -383,11 +383,12 @@ def signup():
 
 
 # Object detection route
-@app.route('/index')
+@app.route('/index', endpoint='home')
 def index():
     if not session.get('logged_in'):
-        return redirect(url_for('login'))  # Redirect to login if not logged in
+        return redirect(url_for('login'))
     return render_template('index.html')
+
 
 
 @app.route('/object-detection/', methods=['POST'])
